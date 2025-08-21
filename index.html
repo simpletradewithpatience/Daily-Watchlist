@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Enhanced Equity Research Dashboard</title>
+<script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+<style>
+    body { font-family: Arial, sans-serif; margin: 20px; background-color: #f4f4f4; }
+    h1 { text-align: center; color: #333; }
+    input, select { margin: 10px 0; display: block; }
+    .summary { display: flex; flex-wrap: wrap; gap: 15px; justify-content: center; }
+
+    .card {
+        padding: 20px 15px 15px 15px;
+        border-radius: 12px;
+        box-shadow: 0 3px 8px rgba(0,0,0,0.15);
+        flex: 1 1 220px;
+        max-width: 220px;
+        transition: transform 0.2s, box-shadow 0.2s;
+        position: relative;
+        cursor: pointer;
+    }
+    .card:hover {
+        transform: scale(1.05);
+        box-shadow: 0 6px 12px rgba(0,0,0,0.2);
+    }
+
+    .card h3 { margin: 5px 0; font-size: 1.1em; }
+    .card p { margin: 4px 0; font-size: 0.9em; }
+
+    .badge {
+        display: inline-block;
+        padding: 4px 10px;
+        border-radius: 12px;
+        font-size: 0.75em;
+        font-weight: bold;
+        margin-bottom: 10px;
+        text-align: center;
+        width: fit-content;
+        transition: transform 0.2s ease-in-out;
+    }
+    .card:hover .badge { transform: scale(1.1); }
+
+    /* Card background gradients (lighter for readability) */
+    .card.darkGreen { background: linear-gradient(135deg, #1E3A8A, #3B82F6); color: #fff; }
+    .card.mediumGreen { background: linear-gradient(135deg, #0D9488, #5EEAD4); color: #fff; }
+    .card.lightGreen { background: linear-gradient(135deg, #FACC15, #FBBF24); color: #000; }  
+
+    /* Badge gradients (darker to stand out) */
+    .badge-darkGreen { background: linear-gradient(135deg, #1E40AF, #2563EB); color: #fff; }
+    .badge-mediumGreen { background: linear-gradient(135deg, #0891B2, #14B8A6); color: #fff; }
+    .badge-lightGreen { background: linear-gradient(135deg, #F59E0B, #D97706); color: #000; }
+
+    .note { font-style: italic; font-size: 0.85em; margin-top: 5px; }
+    .note strong { font-weight: bold; }
+    .note-high { color: #ff6b6b; }
+    .note-low { color: #4dd599; }
+    .note-medium { color: #003366; }
+
+    /* Tooltip styling for hidden metrics */
+    .tooltip {
+        position: absolute;
+        top: 5px; right: 5px;
+        background: rgba(0,0,0,0.75);
+        color: #fff;
+        padding: 5px 8px;
+        border-radius: 6px;
+        font-size: 0.75em;
+        display: none;
+        z-index: 10;
+    }
+    .card:hover .tooltip { display: block; }
+
+    label { font-weight: bold; }
+</style>
+</head>
+<body>
+
+<h1>Enhanced Equity Research Dashboard</h1>
+
+<input type="file" id="fileInput" accept=".csv,.xls,.xlsx">
+<label for="sortSelect">Sort cards by:</label>
+<select id="sortSelect">
+    <option value="">-- No sorting --</option>
+    <option value="percentChange">Percent Change</option>
+    <option value="volX">Volume x</option>
+    <option value="riskReward">Risk/Reward</option>
+</select>
+
+<label for="filterSelect">Filter cards by strength:</label>
+<select id="filterSelect">
+    <option value="">-- Show All --</option>
+    <option value="darkGreen">Strong</option>
+    <option value="mediumGreen">Moderate</option>
+    <option value="lightGreen">Low Momentum</option>
+</select>
+
+<label for="searchInput">Search by Symbol:</label>
+<input type="text" id="searchInput" placeholder="Enter symbol...">
+
+<div id="summaryContainer" class="summary"></div>
+
+<script>
+const fileInput = document.getElementById('fileInput');
+const summaryContainer = document.getElementById('summaryContainer');
+const sortSelect = document.getElementById('sortSelect');
+const filterSelect = document.getElementById('filterSelect');
+const searchInput = document.getElementById('searchInput');
+let allData = [];
+let currentData = [];
+
+const hiddenColumns = ['sector','marketcap name','vol x', 'rsi', 'macd','cci','stochastic'];
+
+fileInput.addEventListener('change', function() {
+    const file = this.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        if(file.name.endsWith('.csv')) processCSV(e.target.result);
+        else {
+            const arr = new Uint8Array(e.target.result);
+            const workbook = XLSX.read(arr, { type: 'array' });
+            const firstSheet = workbook.SheetNames[0];
+            const worksheet = workbook.Sheets[firstSheet];
+            const jsonData = XLSX.utils.sheet_to_json(worksheet);
+            processData(jsonData);
+        }
+    }
+
+    if(file.name.endsWith('.csv')) reader.readAsText(file);
+    else reader.readAsArrayBuffer(file);
+});
+
+function processCSV(csvText){
+    const rows = csvText.split('\n').map(r => r.split(','));
+    const headers = rows[0].map(h => h.trim());
+    const data = rows.slice(1).map(r=>{
+        let obj = {};
+        r.forEach((c,i)=>obj[headers[i].trim().toLowerCase()]=c.trim());
+        return obj;
+    });
+    processData(data);
+}
+
+function processData(data){
+    allData = data.map(row=>{
+        Object.keys(row).forEach(k=>{
+            const val = parseFloat(row[k]);
+            if(!isNaN(val)) row[k] = val;
+        });
+
+        if('go long above' in row && 'stop loss' in row) row.risk = (row['go long above'] - row['stop loss']).toFixed(2);
+        if('close' in row && 'stop loss' in row) row.riskReward = ((row.close - row['stop loss'])/row.close*100).toFixed(2);
+        if('close' in row && 'stop loss' in row && 'lot size' in row) row.potentialPL = ((row.close - row['stop loss'])*row['lot size']).toFixed(2);
+
+        let count = 0;
+        if('% change' in row && row['% change'] > 2) count++;
+        if('vol x' in row && row['vol x'] > 0.5) count++;
+        if('rsi' in row && row.rsi > 30 && row.rsi < 70) count++;
+
+        if(count >= 3) row.cardClass = 'darkGreen';
+        else if(count === 2) row.cardClass = 'mediumGreen';
+        else row.cardClass = 'lightGreen';
+
+        let notes = [];
+        if('rsi' in row){
+            if(row.rsi > 70) notes.push(`<span class="note-high"><strong>RSI high → overbought</strong></span>`);
+            else if(row.rsi < 30) notes.push(`<span class="note-low"><strong>RSI low → buying opportunity</strong></span>`);
+        }
+        if('vol x' in row){
+            if(row['vol x'] > 1) notes.push(`<span class="note-low"><strong>Strong volume → momentum likely</strong></span>`);
+            else notes.push(`<span class="note-medium"><strong>Average volume → watch closely</strong></span>`);
+        }
+        if('% change' in row && row['% change'] > 2)
+            notes.push(`<span class="note-low"><strong>Price moving strongly → trend trade possible</strong></span>`);
+        if('risk' in row && 'potentialPL' in row)
+            notes.push(`<span class="note-medium"><strong>Risk: ${row.risk}, P&L: ${row.potentialPL}</strong></span>`);
+        if('macd' in row)
+            notes.push(`<span class="note-medium"><strong>MACD indicates ${row.macd>0?'bullish':'bearish'} momentum</strong></span>`);
+        if('cci' in row)
+            notes.push(`<span class="note-medium"><strong>CCI shows ${row.cci>100?'overbought':row.cci<-100?'oversold':'neutral'} condition</strong></span>`);
+        if('stochastic' in row)
+            notes.push(`<span class="note-medium"><strong>Stochastic: ${row.stochastic}</strong></span>`);
+
+        row.note = notes.join('<br>');
+
+        row.finalOutlook = (() => {
+            let momentum = row.cardClass === 'darkGreen' ? 'Strong' :
+                           row.cardClass === 'mediumGreen' ? 'Moderate' : 'Low';
+            let trend = (row.macd > 0 && row.rsi < 70) ? 'Bullish' :
+                        (row.macd < 0 && row.rsi > 30) ? 'Bearish' : 'Neutral';
+            let riskLevel = row.risk > (row.close*0.05 || 0) ? 'High' : 'Low';
+            let volTrend = row['vol x'] > 1 ? 'High' : (row['vol x'] > 0.5 ? 'Moderate' : 'Low');
+            return `Momentum: ${momentum}, Trend: ${trend}, Risk: ${riskLevel}, Volume: ${volTrend}`;
+        })();
+
+        return row;
+    });
+
+    currentData = [...allData];
+    renderCards(currentData);
+}
+
+function renderCards(data){
+    let summaryHTML = '';
+    data.forEach(stock=>{
+        let badgeText = stock.cardClass === 'darkGreen' ? 'Strong' :
+                        stock.cardClass === 'mediumGreen' ? 'Moderate' : 'Low Momentum';
+        let tooltipContent = '';
+        hiddenColumns.forEach(col=>{
+            if(col in stock) tooltipContent += `<strong>${col}:</strong> ${stock[col]}<br>`;
+        });
+
+        summaryHTML += `<div class="card ${stock.cardClass}">
+                            <div class="badge badge-${stock.cardClass}">${badgeText}</div>
+                            <h3>${stock.symbol||''}</h3>
+                            ${Object.keys(stock).map(key=>{
+                                if(key !== 'cardClass' && key !== 'note' && key !== 'finalOutlook' && !hiddenColumns.includes(key.toLowerCase()))
+                                    return `<p><strong>${key}:</strong> ${stock[key]}</p>`;
+                                else return '';
+                            }).join('')}
+                            <p class="note">${stock.note}</p>
+                            <p class="note"><strong>Final Outlook:</strong> ${stock.finalOutlook}</p>
+                            <div class="tooltip">${tooltipContent}</div>
+                        </div>`;
+    });
+    summaryContainer.innerHTML = summaryHTML;
+}
+
+sortSelect.addEventListener('change', applyFilterSortSearch);
+filterSelect.addEventListener('change', applyFilterSortSearch);
+searchInput.addEventListener('input', applyFilterSortSearch);
+
+function applyFilterSortSearch() {
+    let data = [...allData];
+    const filterValue = filterSelect.value;
+    if(filterValue) data = data.filter(d=>d.cardClass === filterValue);
+
+    const searchText = searchInput.value.toLowerCase();
+    if(searchText) data = data.filter(d => (d.symbol||'').toLowerCase().includes(searchText));
+
+    const value = sortSelect.value;
+    if(value === 'percentChange') data.sort((a,b)=>b['% change'] - a['% change']);
+    else if(value === 'volX') data.sort((a,b)=>b['vol x'] - a['vol x']);
+    else if(value === 'riskReward') data.sort((a,b)=>b.riskReward - a.riskReward);
+
+    currentData = data;
+    renderCards(currentData);
+}
+</script>
+
+</body>
+</html>

@@ -1,256 +1,465 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Enhanced Equity Research Dashboard</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Equity Research Dashboard — Clean & Clickable</title>
+<link rel="preconnect" href="https://cdn.sheetjs.com" />
 <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
 <style>
-    body { font-family: Arial, sans-serif; margin: 20px; background-color: #f4f4f4; }
-    h1 { text-align: center; color: #333; }
-    input, select { margin: 10px 0; display: block; }
-    .summary { display: flex; flex-wrap: wrap; gap: 15px; justify-content: center; }
+  :root {
+    --bg: #0b1221;
+    --panel: #0f172a;
+    --panel-2: #111827;
+    --text: #e5e7eb;
+    --muted: #9ca3af;
+    --brand: #60a5fa;
+    --ring: rgba(96, 165, 250, .35);
+    --good-1: #16a34a;
+    --good-2: #34d399;
+    --warn-1: #f59e0b;
+    --warn-2: #fde047;
+    --bad-1: #ef4444;
+    --card-strong-1: #0ea5e9; /* cyan-500 */
+    --card-strong-2: #3b82f6; /* blue-500 */
+    --card-med-1: #10b981;   /* emerald-500 */
+    --card-med-2: #22d3ee;   /* cyan-400 */
+    --card-low-1: #f59e0b;   /* amber-500 */
+    --card-low-2: #fbbf24;   /* amber-400 */
+  }
 
-    .card {
-        padding: 20px 15px 15px 15px;
-        border-radius: 12px;
-        box-shadow: 0 3px 8px rgba(0,0,0,0.15);
-        flex: 1 1 220px;
-        max-width: 220px;
-        transition: transform 0.2s, box-shadow 0.2s;
-        position: relative;
-        cursor: pointer;
-    }
-    .card:hover {
-        transform: scale(1.05);
-        box-shadow: 0 6px 12px rgba(0,0,0,0.2);
-    }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji";
+    background: linear-gradient(180deg, var(--bg), #0b1221 60%);
+    color: var(--text);
+  }
 
-    .card h3 { margin: 5px 0; font-size: 1.1em; }
-    .card p { margin: 4px 0; font-size: 0.9em; }
+  header {
+    position: sticky; top: 0; z-index: 30;
+    backdrop-filter: saturate(120%) blur(10px);
+    background: rgba(11, 18, 33, .75);
+    border-bottom: 1px solid rgba(255,255,255,.05);
+  }
+  .container { max-width: 1200px; margin: 0 auto; padding: 16px 20px; }
 
-    .badge {
-        display: inline-block;
-        padding: 4px 10px;
-        border-radius: 12px;
-        font-size: 0.75em;
-        font-weight: bold;
-        margin-bottom: 10px;
-        text-align: center;
-        width: fit-content;
-        transition: transform 0.2s ease-in-out;
-    }
-    .card:hover .badge { transform: scale(1.1); }
+  h1 { margin: 0; font-size: clamp(1.25rem, 2vw, 1.6rem); letter-spacing: .2px; }
+  .sub { color: var(--muted); font-size: .9rem; margin-top: 4px; }
 
-    /* Card background gradients (lighter for readability) */
-    .card.darkGreen { background: linear-gradient(135deg, #1E3A8A, #3B82F6); color: #fff; }
-    .card.mediumGreen { background: linear-gradient(135deg, #0D9488, #5EEAD4); color: #fff; }
-    .card.lightGreen { background: linear-gradient(135deg, #FACC15, #FBBF24); color: #000; }  
+  .row { display: grid; grid-template-columns: 1fr; gap: 12px; }
+  @media (min-width: 720px) {
+    .row { grid-template-columns: 2fr 3fr 2fr 2fr 1fr; align-items: end; }
+  }
 
-    /* Badge gradients (darker to stand out) */
-    .badge-darkGreen { background: linear-gradient(135deg, #1E40AF, #2563EB); color: #fff; }
-    .badge-mediumGreen { background: linear-gradient(135deg, #0891B2, #14B8A6); color: #fff; }
-    .badge-lightGreen { background: linear-gradient(135deg, #F59E0B, #D97706); color: #000; }
+  .panel {
+    background: linear-gradient(180deg, var(--panel), var(--panel-2));
+    border: 1px solid rgba(255,255,255,.06);
+    border-radius: 14px;
+    padding: 10px 12px;
+    box-shadow: 0 6px 20px rgba(0,0,0,.25);
+  }
 
-    .note { font-style: italic; font-size: 0.85em; margin-top: 5px; }
-    .note strong { font-weight: bold; }
-    .note-high { color: #ff6b6b; }
-    .note-low { color: #4dd599; }
-    .note-medium { color: #003366; }
+  label { display: block; font-size: .78rem; color: var(--muted); margin-bottom: 6px; }
+  input[type="file"], select, input[type="text"], button {
+    width: 100%;
+    padding: 10px 12px;
+    background: #0b1328;
+    color: var(--text);
+    border: 1px solid rgba(255,255,255,.08);
+    border-radius: 10px;
+    outline: none;
+  }
+  input[type="file"] { padding: 8px 10px; }
+  input:focus, select:focus, button:focus { box-shadow: 0 0 0 6px var(--ring); border-color: var(--brand); }
 
-    /* Tooltip styling for hidden metrics */
-    .tooltip {
-        position: absolute;
-        top: 5px; right: 5px;
-        background: rgba(0,0,0,0.75);
-        color: #fff;
-        padding: 5px 8px;
-        border-radius: 6px;
-        font-size: 0.75em;
-        display: none;
-        z-index: 10;
-    }
-    .card:hover .tooltip { display: block; }
+  .toolbar { display: grid; gap: 12px; grid-template-columns: repeat(2, 1fr); }
+  @media (min-width: 720px) { .toolbar { grid-template-columns: repeat(4, 1fr); } }
 
-    label { font-weight: bold; }
+  .btn { cursor: pointer; transition: transform .12s ease, box-shadow .12s ease; }
+  .btn:hover { transform: translateY(-1px); box-shadow: 0 10px 20px rgba(0,0,0,.25); }
+  .btn.primary { background: linear-gradient(135deg, #2563eb, #0284c7); border: none; }
+  .btn.ghost { background: transparent; border: 1px dashed rgba(255,255,255,.15); }
+
+  .legend { display:flex; gap:10px; align-items:center; flex-wrap:wrap; font-size: .85rem; color: var(--muted); }
+  .dot { width: 12px; height: 12px; border-radius: 50%; display:inline-block; margin-right:6px; }
+
+  .summary { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px; padding: 18px 0 28px; }
+
+  .card {
+    position: relative;
+    padding: 16px 14px 12px 14px;
+    border-radius: 16px;
+    background: linear-gradient(135deg, #0b1328, #0d1a38);
+    border: 1px solid rgba(255,255,255,.06);
+    box-shadow: 0 10px 30px rgba(0,0,0,.35);
+    transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+    cursor: pointer;
+  }
+  .card:hover { transform: translateY(-4px); box-shadow: 0 16px 40px rgba(0,0,0,.45); border-color: rgba(96,165,250,.35); }
+
+  .card.darkGreen { background: linear-gradient(135deg, var(--card-strong-1), var(--card-strong-2)); color: #fff; }
+  .card.mediumGreen { background: linear-gradient(135deg, var(--card-med-1), var(--card-med-2)); color: #031016; }
+  .card.lightGreen { background: linear-gradient(135deg, var(--card-low-1), var(--card-low-2)); color: #1b1405; }
+
+  .badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 6px 10px; border-radius: 999px; font-size: .75rem; font-weight: 700;
+    background: rgba(0,0,0,.25); color: #fff; border: 1px solid rgba(255,255,255,.25);
+    margin-bottom: 8px;
+    transition: transform .15s ease;
+  }
+  .card:hover .badge { transform: scale(1.06); }
+
+  .stock { display:flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+  .symbol { font-size: 1.1rem; font-weight: 800; letter-spacing:.3px; }
+  .pct { font-variant-numeric: tabular-nums; font-weight: 700; }
+
+  .kv { margin: 8px 0 0 0; display:grid; grid-template-columns: 1fr 1fr; gap: 6px 10px; font-size: .9rem; }
+  .kv b { opacity: .8; font-weight: 700; }
+  .note { margin-top: 8px; font-size: .86rem; line-height: 1.2rem; }
+  .final { margin-top: 6px; font-size: .86rem; font-weight: 700; }
+
+  .tooltip {
+    position: absolute; top: 8px; right: 8px; background: rgba(0,0,0,.7);
+    color: #fff; padding: 6px 8px; border-radius: 8px; font-size: .75rem;
+    display: none; max-width: 240px; pointer-events:none;
+  }
+  .card:hover .tooltip { display: block; }
+
+  .meta { display:flex; justify-content: space-between; align-items: center; gap: 10px; margin-top: 10px; font-size: .8rem; color: var(--muted); }
+  .pill { padding: 4px 8px; border-radius: 999px; border: 1px solid rgba(255,255,255,.15); }
+
+  .empty { padding: 28px; text-align: center; color: var(--muted); border: 1px dashed rgba(255,255,255,.1); border-radius: 12px; }
+
+  .count { font-size: .88rem; color: var(--muted); }
 </style>
 </head>
 <body>
+  <header>
+    <div class="container">
+      <h1>Enhanced Equity Research Dashboard</h1>
+      <div class="sub">Upload a CSV/XLSX, sort, filter, search — then export your curated list for action.</div>
+      <div style="height:12px"></div>
+      <div class="row">
+        <div class="panel">
+          <label for="fileInput">Upload Data</label>
+          <input type="file" id="fileInput" accept=".csv,.xls,.xlsx" />
+        </div>
+        <div class="panel">
+          <label for="sortSelect">Sort by</label>
+          <select id="sortSelect">
+            <option value="">— No sorting —</option>
+            <option value="percentChange">% Change (desc)</option>
+            <option value="volX">Volume x (desc)</option>
+            <option value="riskReward">Risk/Reward (desc)</option>
+          </select>
+        </div>
+        <div class="panel">
+          <label for="filterSelect">Filter by strength</label>
+          <select id="filterSelect">
+            <option value="">— Show All —</option>
+            <option value="darkGreen">Strong</option>
+            <option value="mediumGreen">Moderate</option>
+            <option value="lightGreen">Low Momentum</option>
+          </select>
+        </div>
+        <div class="panel">
+          <label for="searchInput">Search by Symbol</label>
+          <input type="text" id="searchInput" placeholder="e.g., TCS, RELIANCE, INFY" />
+        </div>
+        <div class="panel toolbar">
+          <button id="btnExport" class="btn primary">Export current view (.xlsx)</button>
+          <button id="btnReset" class="btn ghost">Reset controls</button>
+        </div>
+      </div>
+      <div style="height:10px"></div>
+      <div class="legend">
+        <span><span class="dot" style="background:var(--card-strong-2)"></span>Strong</span>
+        <span><span class="dot" style="background:var(--card-med-2)"></span>Moderate</span>
+        <span><span class="dot" style="background:var(--card-low-2)"></span>Low</span>
+        <span class="count" id="countTxt">No data loaded</span>
+      </div>
+    </div>
+  </header>
 
-<h1>Enhanced Equity Research Dashboard</h1>
-
-<input type="file" id="fileInput" accept=".csv,.xls,.xlsx">
-<label for="sortSelect">Sort cards by:</label>
-<select id="sortSelect">
-    <option value="">-- No sorting --</option>
-    <option value="percentChange">Percent Change</option>
-    <option value="volX">Volume x</option>
-    <option value="riskReward">Risk/Reward</option>
-</select>
-
-<label for="filterSelect">Filter cards by strength:</label>
-<select id="filterSelect">
-    <option value="">-- Show All --</option>
-    <option value="darkGreen">Strong</option>
-    <option value="mediumGreen">Moderate</option>
-    <option value="lightGreen">Low Momentum</option>
-</select>
-
-<label for="searchInput">Search by Symbol:</label>
-<input type="text" id="searchInput" placeholder="Enter symbol...">
-
-<div id="summaryContainer" class="summary"></div>
+  <main class="container">
+    <div id="summaryContainer" class="summary"></div>
+    <div id="emptyState" class="empty">Drop a file above to get started. Expected columns include: <b>symbol, close, % change, vol x, rsi, macd, cci, stochastic, go long above, stop loss, lot size</b>. Other columns are shown in a tooltip.</div>
+  </main>
 
 <script>
-const fileInput = document.getElementById('fileInput');
-const summaryContainer = document.getElementById('summaryContainer');
-const sortSelect = document.getElementById('sortSelect');
-const filterSelect = document.getElementById('filterSelect');
-const searchInput = document.getElementById('searchInput');
-let allData = [];
-let currentData = [];
+(function(){
+  const fileInput = document.getElementById('fileInput');
+  const summaryContainer = document.getElementById('summaryContainer');
+  const sortSelect = document.getElementById('sortSelect');
+  const filterSelect = document.getElementById('filterSelect');
+  const searchInput = document.getElementById('searchInput');
+  const emptyState = document.getElementById('emptyState');
+  const btnExport = document.getElementById('btnExport');
+  const btnReset = document.getElementById('btnReset');
+  const countTxt = document.getElementById('countTxt');
 
-const hiddenColumns = ['sector','marketcap name','vol x', 'rsi', 'macd','cci','stochastic','vwap','suprt trend'];
+  let allData = [];
+  let currentData = [];
 
-fileInput.addEventListener('change', function() {
-    const file = this.files[0];
-    if (!file) return;
+  const hiddenColumns = ['sector','marketcap name','vol x','rsi','macd','cci','stochastic','vwap','suprt trend'];
+  const nf = new Intl.NumberFormat(undefined, { maximumFractionDigits: 2 });
+
+  // Persist controls across reloads
+  const stateKey = 'eqdash_state_v2';
+  function saveState(){
+    const s = { sort: sortSelect.value, filter: filterSelect.value, search: searchInput.value };
+    localStorage.setItem(stateKey, JSON.stringify(s));
+  }
+  function loadState(){
+    try {
+      const s = JSON.parse(localStorage.getItem(stateKey) || '{}');
+      if(s.sort) sortSelect.value = s.sort;
+      if(s.filter) filterSelect.value = s.filter;
+      if(s.search) searchInput.value = s.search;
+    } catch(e){}
+  }
+  loadState();
+
+  // Debounce for search
+  function debounce(fn, ms){ let t; return (...args)=>{ clearTimeout(t); t = setTimeout(()=>fn.apply(null,args), ms); }; }
+
+  // File handling
+  fileInput.addEventListener('change', function(){
+    const file = this.files && this.files[0];
+    if(!file) return;
 
     const reader = new FileReader();
-    reader.onload = function(e) {
-        if(file.name.endsWith('.csv')) processCSV(e.target.result);
-        else {
-            const arr = new Uint8Array(e.target.result);
-            const workbook = XLSX.read(arr, { type: 'array' });
-            const firstSheet = workbook.SheetNames[0];
-            const worksheet = workbook.Sheets[firstSheet];
-            const jsonData = XLSX.utils.sheet_to_json(worksheet);
-            processData(jsonData);
-        }
-    }
+    reader.onerror = () => alert('Failed to read file. Please try again.');
+    reader.onload = (e) => {
+      try {
+        if(/\.csv$/i.test(file.name)) processCSV(e.target.result);
+        else processSheet(new Uint8Array(e.target.result));
+      } catch(err){
+        console.error(err);
+        alert('Could not parse file. Ensure headers are present.');
+      }
+    };
 
-    if(file.name.endsWith('.csv')) reader.readAsText(file);
+    if(/\.csv$/i.test(file.name)) reader.readAsText(file);
     else reader.readAsArrayBuffer(file);
-});
+  });
 
-function processCSV(csvText){
-    const rows = csvText.split('\n').map(r => r.split(','));
-    const headers = rows[0].map(h => h.trim());
+  function processSheet(arr){
+    const wb = XLSX.read(arr, { type: 'array' });
+    const sheet = wb.SheetNames[0];
+    const ws = wb.Sheets[sheet];
+    const json = XLSX.utils.sheet_to_json(ws, { defval: '' });
+    processData(json);
+  }
+
+  function processCSV(csv){
+    // Robust CSV split handling commas inside quotes
+    const rows = csv.split(/\r?\n/).filter(Boolean);
+    const parse = (line)=>{
+      const out = []; let cur = '', q = false;
+      for(let i=0;i<line.length;i++){
+        const ch = line[i];
+        if(ch === '"') { q = !q; continue; }
+        if(ch === ',' && !q){ out.push(cur); cur=''; } else { cur += ch; }
+      }
+      out.push(cur);
+      return out;
+    };
+    const headers = parse(rows[0]).map(h=>h.trim());
     const data = rows.slice(1).map(r=>{
-        let obj = {};
-        r.forEach((c,i)=>obj[headers[i].trim().toLowerCase()]=c.trim());
-        return obj;
+      const cols = parse(r);
+      const obj = {};
+      headers.forEach((h,i)=>{ obj[h.trim().toLowerCase()] = (cols[i]||'').toString().trim(); });
+      return obj;
     });
     processData(data);
-}
+  }
 
-function processData(data){
+  function toNum(val){
+    const n = typeof val === 'number' ? val : parseFloat(String(val).replace(/[%,$\s]/g,''));
+    return Number.isFinite(n) ? n : 0;
+  }
+
+  function processData(data){
     allData = data.map(row=>{
-        Object.keys(row).forEach(k=>{
-            const val = parseFloat(row[k]);
-            if(!isNaN(val)) row[k] = val;
-        });
+      // normalize keys to lower-case
+      const lower = {}; Object.keys(row).forEach(k=> lower[k.toLowerCase()] = row[k]);
 
-        if('go long above' in row && 'stop loss' in row) row.risk = (row['go long above'] - row['stop loss']).toFixed(2);
-        if('close' in row && 'stop loss' in row) row.riskReward = ((row.close - row['stop loss'])/row.close*100).toFixed(2);
-        if('close' in row && 'stop loss' in row && 'lot size' in row) row.potentialPL = ((row.close - row['stop loss'])*row['lot size']).toFixed(2);
-
-        let count = 0;
-        if('% change' in row && row['% change'] > 2) count++;
-        if('vol x' in row && row['vol x'] > 0.5) count++;
-        if('rsi' in row && row.rsi > 30 && row.rsi < 70) count++;
-
-        if(count >= 3) row.cardClass = 'darkGreen';
-        else if(count === 2) row.cardClass = 'mediumGreen';
-        else row.cardClass = 'lightGreen';
-
-        let notes = [];
-        if('rsi' in row){
-            if(row.rsi > 70) notes.push(`<span class="note-high"><strong>RSI high → overbought</strong></span>`);
-            else if(row.rsi < 30) notes.push(`<span class="note-low"><strong>RSI low → buying opportunity</strong></span>`);
+      // coerce number-like fields
+      Object.keys(lower).forEach(k=>{
+        const v = toNum(lower[k]);
+        if(!Number.isNaN(v) && /%|change|vol x|rsi|macd|cci|stochastic|close|open|high|low|stop loss|go long above|lot size|volume|riskreward|potentialpl|risk/.test(k)){
+          lower[k] = v;
         }
-        if('vol x' in row){
-            if(row['vol x'] > 1) notes.push(`<span class="note-low"><strong>Strong volume → momentum likely</strong></span>`);
-            else notes.push(`<span class="note-medium"><strong>Average volume → watch closely</strong></span>`);
-        }
-        if('% change' in row && row['% change'] > 2)
-            notes.push(`<span class="note-low"><strong>Price moving strongly → trend trade possible</strong></span>`);
-        if('risk' in row && 'potentialPL' in row)
-            notes.push(`<span class="note-medium"><strong>Risk: ${row.risk}, P&L: ${row.potentialPL}</strong></span>`);
-        if('macd' in row)
-            notes.push(`<span class="note-medium"><strong>MACD indicates ${row.macd>0?'bullish':'bearish'} momentum</strong></span>`);
-        if('cci' in row)
-            notes.push(`<span class="note-medium"><strong>CCI shows ${row.cci>100?'overbought':row.cci<-100?'oversold':'neutral'} condition</strong></span>`);
-        if('stochastic' in row)
-            notes.push(`<span class="note-medium"><strong>Stochastic: ${row.stochastic}</strong></span>`);
+      });
 
-        row.note = notes.join('<br>');
+      // derived fields
+      if('go long above' in lower && 'stop loss' in lower) lower.risk = +(toNum(lower['go long above']) - toNum(lower['stop loss'])).toFixed(2);
+      if('close' in lower && 'stop loss' in lower) lower.riskreward = +(((toNum(lower.close) - toNum(lower['stop loss']))/Math.max(1,toNum(lower.close)))*100).toFixed(2);
+      if('close' in lower && 'stop loss' in lower && 'lot size' in lower) lower.potentialpl = +((toNum(lower.close) - toNum(lower['stop loss']))*toNum(lower['lot size'])).toFixed(2);
 
-        row.finalOutlook = (() => {
-            let momentum = row.cardClass === 'darkGreen' ? 'Strong' :
-                           row.cardClass === 'mediumGreen' ? 'Moderate' : 'Low';
-            let trend = (row.macd > 0 && row.rsi < 70) ? 'Bullish' :
-                        (row.macd < 0 && row.rsi > 30) ? 'Bearish' : 'Neutral';
-            let riskLevel = row.risk > (row.close*0.05 || 0) ? 'High' : 'Low';
-            let volTrend = row['vol x'] > 1 ? 'High' : (row['vol x'] > 0.5 ? 'Moderate' : 'Low');
-            return `Momentum: ${momentum}, Trend: ${trend}, Risk: ${riskLevel}, Volume: ${volTrend}`;
-        })();
+      // strength score
+      let score = 0;
+      if('% change' in lower && toNum(lower['% change']) > 2) score++;
+      if('vol x' in lower && toNum(lower['vol x']) > 0.5) score++;
+      if('rsi' in lower && toNum(lower.rsi) > 30 && toNum(lower.rsi) < 70) score++;
 
-        return row;
+      lower.cardClass = score >= 3 ? 'darkGreen' : (score === 2 ? 'mediumGreen' : 'lightGreen');
+
+      // notes
+      const notes = [];
+      if('rsi' in lower){
+        const r = toNum(lower.rsi);
+        if(r > 70) notes.push(`<span><b>RSI high</b> → overbought</span>`);
+        else if(r < 30) notes.push(`<span><b>RSI low</b> → possible accumulation</span>`);
+        else notes.push(`<span>RSI neutral</span>`);
+      }
+      if('vol x' in lower){
+        const vx = toNum(lower['vol x']);
+        notes.push(vx > 1 ? `<span><b>Strong volume</b> → momentum</span>` : (vx > .5 ? `<span>Avg volume</span>` : `<span>Low volume</span>`));
+      }
+      if('% change' in lower && toNum(lower['% change']) > 2) notes.push(`<span>Price advancing → trend setup</span>`);
+      if('risk' in lower && 'potentialpl' in lower) notes.push(`<span><b>Risk:</b> ${nf.format(lower.risk)}, <b>P&L:</b> ${nf.format(lower.potentialpl)}</span>`);
+      if('macd' in lower) notes.push(`<span>MACD: ${toNum(lower.macd) > 0 ? 'bullish' : 'bearish'}</span>`);
+      if('cci' in lower){ const c = toNum(lower.cci); notes.push(`<span>CCI: ${c>100?'overbought':c<-100?'oversold':'neutral'}</span>`); }
+      if('stochastic' in lower) notes.push(`<span>Stochastic: ${nf.format(toNum(lower.stochastic))}</span>`);
+      lower.note = notes.join('<br>');
+
+      const macd = toNum(lower.macd);
+      const rsi = toNum(lower.rsi);
+      const close = Math.max(1, toNum(lower.close));
+      const riskAbs = Math.abs(toNum(lower.risk));
+      lower.finalOutlook = (()=>{
+        const momentum = lower.cardClass === 'darkGreen' ? 'Strong' : (lower.cardClass === 'mediumGreen' ? 'Moderate' : 'Low');
+        const trend = (macd > 0 && rsi < 70) ? 'Bullish' : (macd < 0 && rsi > 30) ? 'Bearish' : 'Neutral';
+        const riskLevel = riskAbs > close*0.05 ? 'High' : 'Low';
+        const vol = toNum(lower['vol x']);
+        const volTrend = vol > 1 ? 'High' : (vol > .5 ? 'Moderate' : 'Low');
+        return `Momentum: ${momentum}, Trend: ${trend}, Risk: ${riskLevel}, Volume: ${volTrend}`;
+      })();
+
+      return lower;
     });
 
     currentData = [...allData];
-    renderCards(currentData);
-}
+    applyFilterSortSearch();
+  }
 
-function renderCards(data){
-    let summaryHTML = '';
-    data.forEach(stock=>{
-        let badgeText = stock.cardClass === 'darkGreen' ? 'Strong' :
-                        stock.cardClass === 'mediumGreen' ? 'Moderate' : 'Low Momentum';
-        let tooltipContent = '';
-        hiddenColumns.forEach(col=>{
-            if(col in stock) tooltipContent += `<strong>${col}:</strong> ${stock[col]}<br>`;
-        });
+  function renderCards(data){
+    if(!data.length){
+      summaryContainer.innerHTML = '';
+      emptyState.style.display = 'block';
+      countTxt.textContent = '0 matches';
+      return;
+    }
+    emptyState.style.display = 'none';
 
-        summaryHTML += `<div class="card ${stock.cardClass}">
-                            <div class="badge badge-${stock.cardClass}">${badgeText}</div>
-                            <h3>${stock.symbol||''}</h3>
-                            ${Object.keys(stock).map(key=>{
-                                if(key !== 'cardClass' && key !== 'note' && key !== 'finalOutlook' && !hiddenColumns.includes(key.toLowerCase()))
-                                    return `<p><strong>${key}:</strong> ${stock[key]}</p>`;
-                                else return '';
-                            }).join('')}
-                            <p class="note">${stock.note}</p>
-                            <p class="note"><strong>Final Outlook:</strong> ${stock.finalOutlook}</p>
-                            <div class="tooltip">${tooltipContent}</div>
-                        </div>`;
+    const html = data.map(stock=>{
+      const badgeText = stock.cardClass === 'darkGreen' ? 'Strong' : (stock.cardClass === 'mediumGreen' ? 'Moderate' : 'Low');
+      let tooltip = '';
+      hiddenColumns.forEach(col=>{ if(col in stock) tooltip += `<strong>${col}:</strong> ${escapeHtml(stock[col])}<br>`; });
+
+      const visible = Object.keys(stock).filter(k=>!['cardclass','note','finaloutlook'].includes(k.toLowerCase()) && !hiddenColumns.includes(k.toLowerCase()) && !['symbol'].includes(k.toLowerCase()))
+        .slice(0, 8); // keep cards compact
+
+      const pct = ('% change' in stock) ? `${nf.format(toNum(stock['% change']))}%` : '';
+
+      return `<div class="card ${stock.cardClass}" role="button" tabindex="0" aria-label="${escapeHtml(stock.symbol||'')} stock card">
+        <span class="badge" aria-hidden="true">${badgeText}</span>
+        <div class="stock">
+          <div class="symbol">${escapeHtml(stock.symbol || '')}</div>
+          <div class="pct">${pct}</div>
+        </div>
+        <div class="kv">
+          ${visible.map(k=>`<div><b>${escapeHtml(k)}:</b> ${fmtVal(stock[k])}</div>`).join('')}
+        </div>
+        <div class="note">${stock.note}</div>
+        <div class="final">Final Outlook: ${stock.finalOutlook}</div>
+        <div class="tooltip">${tooltip}</div>
+        <div class="meta">
+          <span class="pill">Risk/Reward: ${('riskreward' in stock)? nf.format(stock.riskreward): '—'}</span>
+          <span class="pill">Vol x: ${('vol x' in stock)? nf.format(toNum(stock['vol x'])): '—'}</span>
+        </div>
+      </div>`;
+    }).join('');
+
+    summaryContainer.innerHTML = html;
+    countTxt.textContent = `${data.length} match${data.length===1?'':'es'}`;
+
+    // keyboard accessibility: open tooltip on focus
+    Array.from(summaryContainer.querySelectorAll('.card')).forEach(card=>{
+      card.addEventListener('keydown', (e)=>{ if(e.key==='Enter' || e.key===' '){ e.preventDefault(); card.classList.toggle('show-tip'); } });
     });
-    summaryContainer.innerHTML = summaryHTML;
-}
+  }
 
-sortSelect.addEventListener('change', applyFilterSortSearch);
-filterSelect.addEventListener('change', applyFilterSortSearch);
-searchInput.addEventListener('input', applyFilterSortSearch);
+  function escapeHtml(v){ return String(v==null?'':v).replace(/[&<>"']/g, s=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[s])); }
+  function fmtVal(v){
+    if(typeof v === 'number') return nf.format(v);
+    const num = toNum(v);
+    if(Number.isFinite(num) && String(v).match(/^[\d\s.,%$-]+$/)) return nf.format(num);
+    return escapeHtml(v);
+  }
 
-function applyFilterSortSearch() {
+  function applyFilterSortSearch(){
     let data = [...allData];
-    const filterValue = filterSelect.value;
-    if(filterValue) data = data.filter(d=>d.cardClass === filterValue);
 
-    const searchText = searchInput.value.toLowerCase();
-    if(searchText) data = data.filter(d => (d.symbol||'').toLowerCase().includes(searchText));
+    // filter
+    const f = filterSelect.value;
+    if(f) data = data.filter(d=>d.cardClass === f);
 
-    const value = sortSelect.value;
-    if(value === 'percentChange') data.sort((a,b)=>b['% change'] - a['% change']);
-    else if(value === 'volX') data.sort((a,b)=>b['vol x'] - a['vol x']);
-    else if(value === 'riskReward') data.sort((a,b)=>b.riskReward - a.riskReward);
+    // search
+    const q = searchInput.value.trim().toLowerCase();
+    if(q) data = data.filter(d => String(d.symbol||'').toLowerCase().includes(q));
+
+    // sort
+    const s = sortSelect.value;
+    if(s === 'percentChange') data.sort((a,b)=> toNum(b['% change']) - toNum(a['% change']));
+    else if(s === 'volX') data.sort((a,b)=> toNum(b['vol x']) - toNum(a['vol x']));
+    else if(s === 'riskReward') data.sort((a,b)=> toNum(b.riskreward) - toNum(a.riskreward));
 
     currentData = data;
     renderCards(currentData);
-}
-</script>
+    saveState();
+  }
 
+  sortSelect.addEventListener('change', applyFilterSortSearch);
+  filterSelect.addEventListener('change', applyFilterSortSearch);
+  searchInput.addEventListener('input', debounce(applyFilterSortSearch, 150));
+
+  // Export current view to XLSX
+  btnExport.addEventListener('click', ()=>{
+    if(!currentData.length){ alert('Nothing to export yet.'); return; }
+    const rows = currentData.map(o=>({
+      Symbol: o.symbol || '',
+      Close: o.close ?? '',
+      PercentChange: o['% change'] ?? '',
+      VolX: o['vol x'] ?? '',
+      RSI: o.rsi ?? '',
+      MACD: o.macd ?? '',
+      CCI: o.cci ?? '',
+      Stochastic: o.stochastic ?? '',
+      Risk: o.risk ?? '',
+      RiskRewardPct: o.riskreward ?? '',
+      PotentialPL: o.potentialpl ?? '',
+      FinalOutlook: o.finalOutlook || ''
+    }));
+    const ws = XLSX.utils.json_to_sheet(rows);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Screened');
+    const fname = `screened_${new Date().toISOString().slice(0,10)}.xlsx`;
+    XLSX.writeFile(wb, fname);
+  });
+
+  btnReset.addEventListener('click', ()=>{
+    sortSelect.value = '';
+    filterSelect.value = '';
+    searchInput.value = '';
+    applyFilterSortSearch();
+  });
+})();
+</script>
 </body>
 </html>
-

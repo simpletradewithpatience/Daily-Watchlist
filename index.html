@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Equity Research Dashboard — Clean & Clickable</title>
+<title>Equity Research Dashboard — Pro Upgrade</title>
 <link rel="preconnect" href="https://cdn.sheetjs.com" />
 <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
 <style>
@@ -26,6 +26,8 @@
     --card-med-2: #22d3ee;   /* cyan-400 */
     --card-low-1: #f59e0b;   /* amber-500 */
     --card-low-2: #fbbf24;   /* amber-400 */
+    --accent: #22c55e;
+    --danger: #ef4444;
   }
 
   * { box-sizing: border-box; }
@@ -49,8 +51,8 @@
   .sub { color: var(--muted); font-size: .9rem; margin-top: 4px; }
 
   .row { display: grid; grid-template-columns: 1fr; gap: 12px; }
-  @media (min-width: 720px) {
-    .row { grid-template-columns: 2fr 3fr 2fr 2fr 1fr; align-items: end; }
+  @media (min-width: 900px) {
+    .row { grid-template-columns: 2fr 3fr 2fr 2fr 1fr 1fr; align-items: end; }
   }
 
   .panel {
@@ -81,11 +83,12 @@
   .btn:hover { transform: translateY(-1px); box-shadow: 0 10px 20px rgba(0,0,0,.25); }
   .btn.primary { background: linear-gradient(135deg, #2563eb, #0284c7); border: none; }
   .btn.ghost { background: transparent; border: 1px dashed rgba(255,255,255,.15); }
+  .btn.success { background: linear-gradient(135deg, #22c55e, #16a34a); border: none; }
 
   .legend { display:flex; gap:10px; align-items:center; flex-wrap:wrap; font-size: .85rem; color: var(--muted); }
   .dot { width: 12px; height: 12px; border-radius: 50%; display:inline-block; margin-right:6px; }
 
-  .summary { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px; padding: 18px 0 28px; }
+  .summary { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; padding: 18px 0 28px; }
 
   .card {
     position: relative;
@@ -124,7 +127,7 @@
   .tooltip {
     position: absolute; top: 8px; right: 8px; background: rgba(0,0,0,.7);
     color: #fff; padding: 6px 8px; border-radius: 8px; font-size: .75rem;
-    display: none; max-width: 240px; pointer-events:none;
+    display: none; max-width: 260px; pointer-events:none;
   }
   .card:hover .tooltip { display: block; }
 
@@ -134,13 +137,37 @@
   .empty { padding: 28px; text-align: center; color: var(--muted); border: 1px dashed rgba(255,255,255,.1); border-radius: 12px; }
 
   .count { font-size: .88rem; color: var(--muted); }
+
+  /* KPI strip */
+  .kpis { display:grid; grid-template-columns: repeat(2,1fr); gap:10px; margin-top:12px; }
+  @media (min-width: 720px){ .kpis { grid-template-columns: repeat(4,1fr);} }
+  .kpi { background: rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.08); border-radius:12px; padding:10px 12px; }
+  .kpi b { display:block; font-size:.75rem; color:var(--muted); }
+  .kpi .val { font-size:1.1rem; font-weight:800; letter-spacing:.2px; }
+
+  /* Quick filters */
+  .chips { display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
+  .chip { padding:6px 10px; border-radius:999px; border:1px solid rgba(255,255,255,.18); background:rgba(255,255,255,.03); cursor:pointer; font-size:.82rem; }
+  .chip.active { outline: 3px solid var(--ring); border-color: var(--brand); }
+
+  /* Drop zone */
+  .dropzone { border:2px dashed rgba(255,255,255,.2); border-radius:12px; padding:18px; text-align:center; color:var(--muted); }
+  .dropzone.highlight { border-color: var(--brand); background: rgba(96,165,250,.08); color: var(--text); }
+
+  /* Modal */
+  .modal-backdrop { position:fixed; inset:0; background:rgba(0,0,0,.6); display:none; align-items:center; justify-content:center; z-index:50; }
+  .modal { width:min(680px,94vw); background:linear-gradient(180deg, var(--panel), var(--panel-2)); border:1px solid rgba(255,255,255,.12); border-radius:16px; padding:18px; box-shadow:0 20px 60px rgba(0,0,0,.5); }
+  .modal-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
+  .modal-actions { display:flex; gap:8px; flex-wrap:wrap; }
+
+  .toast { position:fixed; right:16px; bottom:16px; background:#0b1328; color:var(--text); padding:10px 12px; border:1px solid rgba(255,255,255,.15); border-radius:10px; box-shadow:0 8px 24px rgba(0,0,0,.4); display:none; z-index:60; }
 </style>
 </head>
 <body>
   <header>
     <div class="container">
-      <h1>Enhanced Equity Research Dashboard</h1>
-      <div class="sub">Upload a CSV/XLSX, sort, filter, search — then export your curated list for action.</div>
+      <h1>Equity Research Dashboard — Pro</h1>
+      <div class="sub">Clean, clickable stock screens. Built for <b>education + action</b>.</div>
       <div style="height:12px"></div>
       <div class="row">
         <div class="panel">
@@ -173,8 +200,14 @@
           <button id="btnExport" class="btn primary">Export current view (.xlsx)</button>
           <button id="btnReset" class="btn ghost">Reset controls</button>
         </div>
+        <div class="panel toolbar">
+          <button id="btnTemplate" class="btn ghost">Download CSV Template</button>
+          <button id="btnPersist" class="btn success">Save dataset locally</button>
+        </div>
       </div>
-      <div style="height:10px"></div>
+      <div class="chips" id="quickChips" aria-label="Quick filters"></div>
+      <div class="kpis" id="kpiStrip" aria-hidden="true" style="display:none"></div>
+      <div style="height:6px"></div>
       <div class="legend">
         <span><span class="dot" style="background:var(--card-strong-2)"></span>Strong</span>
         <span><span class="dot" style="background:var(--card-med-2)"></span>Moderate</span>
@@ -185,9 +218,32 @@
   </header>
 
   <main class="container">
+    <div id="dropZone" class="dropzone" role="region" aria-label="Drop a CSV or Excel file here">Drop CSV/XLSX here or press <b>Ctrl/Cmd+V</b> to paste</div>
     <div id="summaryContainer" class="summary"></div>
     <div id="emptyState" class="empty">Drop a file above to get started. Expected columns include: <b>symbol, close, % change, vol x, rsi, macd, cci, stochastic, go long above, stop loss, lot size</b>. Other columns are shown in a tooltip.</div>
   </main>
+
+  <!-- Modal -->
+  <div id="modalBackdrop" class="modal-backdrop" role="dialog" aria-modal="true" aria-hidden="true">
+    <div class="modal">
+      <div class="modal-header">
+        <div>
+          <div id="mSymbol" style="font-weight:900; font-size:1.2rem"></div>
+          <div id="mSubtitle" style="color:var(--muted); font-size:.85rem"></div>
+        </div>
+        <button id="mClose" class="btn ghost" aria-label="Close">Close</button>
+      </div>
+      <div id="mBody"></div>
+      <div style="height:10px"></div>
+      <div class="modal-actions">
+        <button id="mCopyPlan" class="btn primary">Copy Trade Plan</button>
+        <button id="mWatch" class="btn success">Add to Watchlist</button>
+        <button id="mRemoveWatch" class="btn ghost" style="display:none">Remove from Watchlist</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
 <script>
 (function(){
@@ -199,16 +255,32 @@
   const emptyState = document.getElementById('emptyState');
   const btnExport = document.getElementById('btnExport');
   const btnReset = document.getElementById('btnReset');
+  const btnTemplate = document.getElementById('btnTemplate');
+  const btnPersist = document.getElementById('btnPersist');
   const countTxt = document.getElementById('countTxt');
+  const dropZone = document.getElementById('dropZone');
+  const kpiStrip = document.getElementById('kpiStrip');
+  const chips = document.getElementById('quickChips');
+
+  const modalBackdrop = document.getElementById('modalBackdrop');
+  const mSymbol = document.getElementById('mSymbol');
+  const mSubtitle = document.getElementById('mSubtitle');
+  const mBody = document.getElementById('mBody');
+  const mClose = document.getElementById('mClose');
+  const mCopyPlan = document.getElementById('mCopyPlan');
+  const mWatch = document.getElementById('mWatch');
+  const mRemoveWatch = document.getElementById('mRemoveWatch');
+  const toast = document.getElementById('toast');
 
   let allData = [];
   let currentData = [];
+  let watchlist = new Set(JSON.parse(localStorage.getItem('eqdash_watchlist')||'[]'));
 
   const hiddenColumns = ['sector','marketcap name','vol x','rsi','macd','cci','stochastic','vwap','suprt trend'];
   const nf = new Intl.NumberFormat(undefined, { maximumFractionDigits: 2 });
 
   // Persist controls across reloads
-  const stateKey = 'eqdash_state_v2';
+  const stateKey = 'eqdash_state_v3';
   function saveState(){
     const s = { sort: sortSelect.value, filter: filterSelect.value, search: searchInput.value };
     localStorage.setItem(stateKey, JSON.stringify(s));
@@ -226,26 +298,48 @@
   // Debounce for search
   function debounce(fn, ms){ let t; return (...args)=>{ clearTimeout(t); t = setTimeout(()=>fn.apply(null,args), ms); }; }
 
+  // Keyboard shortcuts
+  window.addEventListener('keydown', (e)=>{
+    if(e.key === '/' && document.activeElement !== searchInput){ e.preventDefault(); searchInput.focus(); }
+    if((e.ctrlKey||e.metaKey) && e.key.toLowerCase()==='e'){ e.preventDefault(); exportCurrent(); }
+    if((e.ctrlKey||e.metaKey) && e.key.toLowerCase()==='r'){ e.preventDefault(); resetControls(); }
+  });
+
   // File handling
   fileInput.addEventListener('change', function(){
     const file = this.files && this.files[0];
     if(!file) return;
+    readFile(file);
+  });
 
+  // Drag & Drop
+  ;['dragenter','dragover'].forEach(ev=> dropZone.addEventListener(ev, (e)=>{ e.preventDefault(); dropZone.classList.add('highlight'); }));
+  ;['dragleave','drop'].forEach(ev=> dropZone.addEventListener(ev, (e)=>{ e.preventDefault(); if(ev==='drop'){ const f=e.dataTransfer.files[0]; if(f) readFile(f); } dropZone.classList.remove('highlight'); }));
+
+  // Paste CSV
+  window.addEventListener('paste', (e)=>{
+    const txt = e.clipboardData && e.clipboardData.getData('text');
+    if(txt && /,|\n/.test(txt)){
+      try { processCSV(txt); showToast('Pasted CSV data'); } catch(err){ showToast('Paste failed'); }
+    }
+  });
+
+  function readFile(file){
     const reader = new FileReader();
     reader.onerror = () => alert('Failed to read file. Please try again.');
     reader.onload = (e) => {
       try {
         if(/\.csv$/i.test(file.name)) processCSV(e.target.result);
         else processSheet(new Uint8Array(e.target.result));
+        showToast('Loaded: ' + file.name);
       } catch(err){
         console.error(err);
         alert('Could not parse file. Ensure headers are present.');
       }
     };
-
     if(/\.csv$/i.test(file.name)) reader.readAsText(file);
     else reader.readAsArrayBuffer(file);
-  });
+  }
 
   function processSheet(arr){
     const wb = XLSX.read(arr, { type: 'array' });
@@ -301,6 +395,16 @@
       if('close' in lower && 'stop loss' in lower) lower.riskreward = +(((toNum(lower.close) - toNum(lower['stop loss']))/Math.max(1,toNum(lower.close)))*100).toFixed(2);
       if('close' in lower && 'stop loss' in lower && 'lot size' in lower) lower.potentialpl = +((toNum(lower.close) - toNum(lower['stop loss']))*toNum(lower['lot size'])).toFixed(2);
 
+      // R-multiples using entry = go long above
+      if('go long above' in lower && 'stop loss' in lower){
+        const entry = toNum(lower['go long above']);
+        const sl = toNum(lower['stop loss']);
+        const R = Math.max(0.01, entry - sl);
+        lower.target1 = +(entry + 1*R).toFixed(2);
+        lower.target2 = +(entry + 2*R).toFixed(2);
+        lower.rMultiple = R;
+      }
+
       // strength score
       let score = 0;
       if('% change' in lower && toNum(lower['% change']) > 2) score++;
@@ -345,6 +449,8 @@
     });
 
     currentData = [...allData];
+    renderKpis(currentData);
+    buildQuickChips();
     applyFilterSortSearch();
   }
 
@@ -353,6 +459,7 @@
       summaryContainer.innerHTML = '';
       emptyState.style.display = 'block';
       countTxt.textContent = '0 matches';
+      kpiStrip.style.display = 'none';
       return;
     }
     emptyState.style.display = 'none';
@@ -362,13 +469,14 @@
       let tooltip = '';
       hiddenColumns.forEach(col=>{ if(col in stock) tooltip += `<strong>${col}:</strong> ${escapeHtml(stock[col])}<br>`; });
 
-      const visible = Object.keys(stock).filter(k=>!['cardclass','note','finaloutlook'].includes(k.toLowerCase()) && !hiddenColumns.includes(k.toLowerCase()) && !['symbol'].includes(k.toLowerCase()))
+      const visible = Object.keys(stock).filter(k=>!['cardclass','note','finaloutlook','rmultiple'].includes(k.toLowerCase()) && !hiddenColumns.includes(k.toLowerCase()) && !['symbol'].includes(k.toLowerCase()))
         .slice(0, 8); // keep cards compact
 
       const pct = ('% change' in stock) ? `${nf.format(toNum(stock['% change']))}%` : '';
+      const inWatch = watchlist.has(String(stock.symbol||'').toUpperCase());
 
-      return `<div class="card ${stock.cardClass}" role="button" tabindex="0" aria-label="${escapeHtml(stock.symbol||'')} stock card">
-        <span class="badge" aria-hidden="true">${badgeText}</span>
+      return `<div class="card ${stock.cardClass}" role="button" tabindex="0" data-symbol="${escapeAttr(stock.symbol||'')}" aria-label="${escapeAttr(stock.symbol||'')} stock card">
+        <span class="badge" aria-hidden="true">${badgeText}${inWatch?' • ★':''}</span>
         <div class="stock">
           <div class="symbol">${escapeHtml(stock.symbol || '')}</div>
           <div class="pct">${pct}</div>
@@ -376,6 +484,7 @@
         <div class="kv">
           ${visible.map(k=>`<div><b>${escapeHtml(k)}:</b> ${fmtVal(stock[k])}</div>`).join('')}
         </div>
+        ${('target1' in stock)? `<div class="note"><b>Targets:</b> T1 ${fmtVal(stock.target1)}, T2 ${fmtVal(stock.target2)}</div>`:''}
         <div class="note">${stock.note}</div>
         <div class="final">Final Outlook: ${stock.finalOutlook}</div>
         <div class="tooltip">${tooltip}</div>
@@ -388,14 +497,17 @@
 
     summaryContainer.innerHTML = html;
     countTxt.textContent = `${data.length} match${data.length===1?'':'es'}`;
+    kpiStrip.style.display = 'grid';
 
-    // keyboard accessibility: open tooltip on focus
+    // Click to open modal
     Array.from(summaryContainer.querySelectorAll('.card')).forEach(card=>{
-      card.addEventListener('keydown', (e)=>{ if(e.key==='Enter' || e.key===' '){ e.preventDefault(); card.classList.toggle('show-tip'); } });
+      card.addEventListener('click', ()=> openModal(card.getAttribute('data-symbol')));
+      card.addEventListener('keydown', (e)=>{ if(e.key==='Enter' || e.key===' '){ e.preventDefault(); openModal(card.getAttribute('data-symbol')); } });
     });
   }
 
   function escapeHtml(v){ return String(v==null?'':v).replace(/[&<>"']/g, s=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[s])); }
+  function escapeAttr(v){ return escapeHtml(v).replace(/"/g,'&quot;'); }
   function fmtVal(v){
     if(typeof v === 'number') return nf.format(v);
     const num = toNum(v);
@@ -421,6 +533,7 @@
     else if(s === 'riskReward') data.sort((a,b)=> toNum(b.riskreward) - toNum(a.riskreward));
 
     currentData = data;
+    renderKpis(currentData);
     renderCards(currentData);
     saveState();
   }
@@ -430,7 +543,7 @@
   searchInput.addEventListener('input', debounce(applyFilterSortSearch, 150));
 
   // Export current view to XLSX
-  btnExport.addEventListener('click', ()=>{
+  function exportCurrent(){
     if(!currentData.length){ alert('Nothing to export yet.'); return; }
     const rows = currentData.map(o=>({
       Symbol: o.symbol || '',
@@ -444,6 +557,10 @@
       Risk: o.risk ?? '',
       RiskRewardPct: o.riskreward ?? '',
       PotentialPL: o.potentialpl ?? '',
+      Entry: o['go long above'] ?? '',
+      StopLoss: o['stop loss'] ?? '',
+      Target1: o.target1 ?? '',
+      Target2: o.target2 ?? '',
       FinalOutlook: o.finalOutlook || ''
     }));
     const ws = XLSX.utils.json_to_sheet(rows);
@@ -451,14 +568,131 @@
     XLSX.utils.book_append_sheet(wb, ws, 'Screened');
     const fname = `screened_${new Date().toISOString().slice(0,10)}.xlsx`;
     XLSX.writeFile(wb, fname);
-  });
+  }
+  btnExport.addEventListener('click', exportCurrent);
 
-  btnReset.addEventListener('click', ()=>{
+  function resetControls(){
     sortSelect.value = '';
     filterSelect.value = '';
     searchInput.value = '';
+    chips.querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));
     applyFilterSortSearch();
+  }
+  btnReset.addEventListener('click', resetControls);
+
+  // CSV Template
+  btnTemplate.addEventListener('click', ()=>{
+    const headers = ['symbol','close','% change','vol x','rsi','macd','cci','stochastic','go long above','stop loss','lot size'];
+    const ws = XLSX.utils.aoa_to_sheet([headers, ['TCS', 3850, 1.2, 0.8, 54, 0.3, 45, 70, 3900, 3780, 300]]);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Template');
+    XLSX.writeFile(wb, 'eqdash_template.csv');
   });
+
+  // Persist dataset locally (for quick reloads)
+  btnPersist.addEventListener('click', ()=>{
+    if(!allData.length){ showToast('Load some data first'); return; }
+    try{
+      localStorage.setItem('eqdash_dataset', JSON.stringify(allData).slice(0, 2_000_000));
+      showToast('Saved dataset locally');
+    }catch(e){ showToast('Could not save (too large)'); }
+  });
+
+  // Auto-load persisted dataset
+  try {
+    const persisted = localStorage.getItem('eqdash_dataset');
+    if(persisted){ allData = JSON.parse(persisted); currentData = [...allData]; renderKpis(currentData); buildQuickChips(); applyFilterSortSearch(); }
+  } catch(e){}
+
+  function percentile(arr, p){ if(!arr.length) return 0; const a=[...arr].sort((x,y)=>x-y); const i=(p/100)*(a.length-1); const lo=Math.floor(i), hi=Math.ceil(i); if(lo===hi) return a[lo]; return a[lo]+(a[hi]-a[lo])*(i-lo); }
+  function avg(arr){ return arr.length? arr.reduce((a,b)=>a+b,0)/arr.length : 0; }
+
+  function renderKpis(data){
+    const pct = data.map(d=> toNum(d['% change'])).filter(n=>Number.isFinite(n));
+    const rsi = data.map(d=> toNum(d.rsi)).filter(n=>Number.isFinite(n));
+    const vol = data.map(d=> toNum(d['vol x'])).filter(n=>Number.isFinite(n));
+
+    const items = [
+      { label:'Total Symbols', val: data.length },
+      { label:'Avg % Change', val: nf.format(avg(pct)) + '%' },
+      { label:'Median RSI', val: nf.format(percentile(rsi, 50)) },
+      { label:'Avg Vol x', val: nf.format(avg(vol)) },
+    ];
+
+    kpiStrip.innerHTML = items.map(i=>`<div class="kpi"><b>${i.label}</b><div class="val">${i.val}</div></div>`).join('');
+  }
+
+  function buildQuickChips(){
+    chips.innerHTML = '';
+    const defs = [
+      { id:'breakout', label:'Breakout: %chg>2 & Vol>1 & MACD>0', fn: d=> toNum(d['% change'])>2 && toNum(d['vol x'])>1 && toNum(d.macd)>0 },
+      { id:'pullback', label:'Healthy Pullback: RSI 40–60', fn: d=> toNum(d.rsi)>=40 && toNum(d.rsi)<=60 },
+      { id:'value', label:'Low Momentum (scan)', fn: d=> d.cardClass==='lightGreen' },
+      { id:'watch', label:'★ Watchlist only', fn: d=> watchlist.has(String(d.symbol||'').toUpperCase()) },
+    ];
+    defs.forEach(def=>{
+      const el = document.createElement('button');
+      el.className = 'chip'; el.textContent = def.label; el.setAttribute('data-id', def.id);
+      el.addEventListener('click', ()=>{
+        chips.querySelectorAll('.chip').forEach(c=> c.classList.toggle('active', c===el && !el.classList.contains('active')));
+        if(el.classList.contains('active')){
+          const filtered = allData.filter(def.fn);
+          currentData = filtered; renderKpis(currentData); renderCards(currentData);
+        } else { applyFilterSortSearch(); }
+      });
+      chips.appendChild(el);
+    });
+  }
+
+  // Modal logic
+  function openModal(symbol){
+    const s = String(symbol||'').toLowerCase();
+    const row = allData.find(r=> String(r.symbol||'').toLowerCase()===s);
+    if(!row) return;
+    mSymbol.textContent = row.symbol || '';
+    mSubtitle.textContent = row.finalOutlook || '';
+
+    const entry = toNum(row['go long above']);
+    const sl = toNum(row['stop loss']);
+    const r = Math.max(0.01, entry - sl);
+    const t1 = ('target1' in row) ? row.target1 : entry + r;
+    const t2 = ('target2' in row) ? row.target2 : entry + 2*r;
+    const rr = r ? ((t1-entry)/r).toFixed(1)+'R' : '—';
+
+    const wStar = watchlist.has(String(row.symbol||'').toUpperCase());
+    mWatch.style.display = wStar ? 'none':'inline-block';
+    mRemoveWatch.style.display = wStar ? 'inline-block':'none';
+
+    mBody.innerHTML = `
+      <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(160px,1fr)); gap:10px">
+        <div class="kpi"><b>Entry</b><div class="val">${fmtVal(entry)}</div></div>
+        <div class="kpi"><b>Stop Loss</b><div class="val">${fmtVal(sl)}</div></div>
+        <div class="kpi"><b>Target 1</b><div class="val">${fmtVal(t1)}</div></div>
+        <div class="kpi"><b>Target 2</b><div class="val">${fmtVal(t2)}</div></div>
+        <div class="kpi"><b>R (per share)</b><div class="val">${fmtVal(r)}</div></div>
+        <div class="kpi"><b>Risk/Reward%</b><div class="val">${fmtVal(row.riskreward||0)}%</div></div>
+      </div>
+      <div style="margin-top:10px; color:var(--muted)">MACD: ${fmtVal(row.macd)} • RSI: ${fmtVal(row.rsi)} • Vol x: ${fmtVal(row['vol x'])}</div>
+    `;
+
+    mCopyPlan.onclick = ()=>{
+      const plan = `${row.symbol}\nEntry: ${entry}\nSL: ${sl}\nT1: ${t1}\nT2: ${t2}\nNotes: ${row.finalOutlook}`;
+      navigator.clipboard.writeText(plan).then(()=> showToast('Trade plan copied'));
+    };
+
+    mWatch.onclick = ()=>{ watchlist.add(String(row.symbol||'').toUpperCase()); persistWatch(); showToast('Added to Watchlist'); mWatch.style.display='none'; mRemoveWatch.style.display='inline-block'; renderCards(currentData); };
+    mRemoveWatch.onclick = ()=>{ watchlist.delete(String(row.symbol||'').toUpperCase()); persistWatch(); showToast('Removed from Watchlist'); mWatch.style.display='inline-block'; mRemoveWatch.style.display='none'; renderCards(currentData); };
+
+    modalBackdrop.style.display = 'flex';
+    modalBackdrop.setAttribute('aria-hidden', 'false');
+  }
+  mClose.addEventListener('click', closeModal);
+  modalBackdrop.addEventListener('click', (e)=>{ if(e.target===modalBackdrop) closeModal(); });
+  function closeModal(){ modalBackdrop.style.display='none'; modalBackdrop.setAttribute('aria-hidden','true'); }
+  function persistWatch(){ localStorage.setItem('eqdash_watchlist', JSON.stringify(Array.from(watchlist))); }
+
+  function showToast(msg){ toast.textContent = msg; toast.style.display='block'; clearTimeout(showToast._t); showToast._t = setTimeout(()=> toast.style.display='none', 1800); }
+
 })();
 </script>
 </body>

@@ -514,8 +514,15 @@
   // Clear persisted filter/sort state
     try { localStorage.removeItem('eqdash_state_v4'); } catch(e) {}
 
-    applyFilterSortSearch();
+  // 🔑 Also clear data
+    allData = [];
+    currentData = [];
+    summaryContainer.innerHTML = '';
+    emptyState.style.display = 'block';
+    countTxt.textContent = 'No data loaded';
+    kpiStrip.style.display = 'none';
 }
+
 
   btnReset.addEventListener('click', resetControls);
 
@@ -646,5 +653,6 @@
 </script>
 </body>
 </html>
+
 
 

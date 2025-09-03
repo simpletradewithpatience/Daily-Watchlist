@@ -510,8 +510,13 @@
     searchInput.value = '';
     quickChips.querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));
     strengthChips.querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));
+
+  // Clear persisted filter/sort state
+    try { localStorage.removeItem('eqdash_state_v4'); } catch(e) {}
+
     applyFilterSortSearch();
-  }
+}
+
   btnReset.addEventListener('click', resetControls);
 
   // CSV Template
@@ -641,3 +646,4 @@
 </script>
 </body>
 </html>
+

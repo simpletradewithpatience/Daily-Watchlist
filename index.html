@@ -499,7 +499,7 @@
   }
   function toExportRows(data){
     return data.map(o=>({
-      Symbol: o.symbol || '', Close: o.close ?? '', PercentChange: o['% change'] ?? '', VolX: o['vol x'] ?? '', RSI: o.rsi ?? '', MACD: o.macd ?? '', CCI: o.cci ?? '', Stochastic: o.stochastic ?? '', Risk: o.risk ?? '', RiskRewardPct: o.riskreward ?? '', PotentialPL: o.potentialpl ?? '', Entry: o['go long above'] ?? '', StopLoss: o['stop loss'] ?? '', Target1: o.target1 ?? '', Target2: o.target2 ?? '', FinalOutlook: o.finalOutlook || ''
+      Symbol: o.symbol || '', Close: o.close ?? '', PercentChange: o['% change'] ?? '', Volume: o.volume ?? '', Volume20SMA: o['volume 20 sma'] ?? '', VolX: o['vol x'] ?? '', RSI: o.rsi ?? '', MACD: o.macd ?? '', CCI: o.cci ?? '', Stochastic: o.stochastic ?? '', Risk: o.risk ?? '', RiskRewardPct: o.riskreward ?? '', PotentialPL: o.potentialpl ?? '', Entry: o['go long above'] ?? '', StopLoss: o['stop loss'] ?? '', Target1: o.target1 ?? '', Target2: o.target2 ?? '', FinalOutlook: o.finalOutlook || ''
     }));
   }
   btnExportXLSX.addEventListener('click', exportXLSX);
@@ -646,4 +646,5 @@
 </script>
 </body>
 </html>
+
 

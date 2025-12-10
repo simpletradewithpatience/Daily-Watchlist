@@ -1,6 +1,3 @@
-
-
-
 <!DOCTYPE html>
 <html lang="en" data-theme="dark">
 <head>
@@ -1474,21 +1471,29 @@ return {entry,sl,t1,t2,R};
 function computeSwingLevels(row){
 const baseEntry = row.entry ?? row.close ?? 0;
 if(!baseEntry) return {entry:0,sl:0,t1:0,t2:0,R:0};
+
 const slBase = row.sl ?? baseEntry*0.97;
-const baseR  = Math.max(0.01, baseEntry-slBase);
+const baseR  = Math.max(0.01, baseEntry - slBase);
 
 const volAdj = row.volX!=null ? Math.min(Math.max(row.volX,0.6),2) : 1;
 const rsiAdj = row.rsi!=null ? (
-row.rsi<35 ? 0.9 :
-row.rsi>70 ? 1.2 : 1
+row.rsi < 35 ? 0.9 :
+row.rsi > 70 ? 1.2 : 1
 ) : 1;
 
-const swingR = baseR * (1.2*volAdj*rsiAdj);
-const sl     = baseEntry - swingR;
-const t1     = baseEntry + swingR*2;
-const t2     = baseEntry + swingR*3.5;
+const swingR = baseR * (1.2 * volAdj * rsiAdj);
+let sl       = baseEntry - swingR;
+const t1     = baseEntry + swingR * 2;
+const t2     = baseEntry + swingR * 3.5;
 
-return {entry:baseEntry,sl,t1,t2,R:swingR};
+// ⭐ NEW FIX: ensure Swing SL always below (wider than) Intraday SL
+const intra = computeIntradayLevels(row);
+if (sl >= intra.sl) {
+const extra = 0.25 * (intra.entry - intra.sl);  // 25% extra breathing room
+sl = intra.sl - extra;
+}
+
+return {entry: baseEntry, sl, t1, t2, R: swingR};
 }
 
 /* Outlook calculator for both UI + post */

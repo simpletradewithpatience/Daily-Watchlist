@@ -889,13 +889,12 @@ const COLS = [
 { label:'MACD',   key:'macd',   numeric:true },
 { label:'CCI',    key:'cci',    numeric:true },
 { label:'Stoch',  key:'stoch',  numeric:true },
+{ label:'Candle', key:'candleLabel', numeric:false },
 { label:'Entry',  key:'entry',  numeric:true },
 { label:'SL',     key:'sl',     numeric:true },
 { label:'T1',     key:'t1',     numeric:true },
 { label:'T2',     key:'t2',     numeric:true },
 { label:'Risk',   key:'risk',   numeric:true },
-{ label:'RR %',   key:'rrPct',  numeric:true },
-{ label:'P&L',    key:'pnl',    numeric:true },
 { label:'AI Score', key:'score', numeric:true }
 ];
 
@@ -992,6 +991,38 @@ const symbol = row.Symbol || row.symbol || lc['symbol'] || '';
 if(!symbol) return null;
 
 const close = toNum(row.Close ?? lc['close']);
+
+/* ✅ INSERT HERE */
+const open  = toNum(row.Open ?? lc['open']);
+const high  = toNum(row.High ?? lc['high']);
+const low   = toNum(row.Low  ?? lc['low']);
+
+let candleLabel = 'NA';
+
+if (
+  open !== null &&
+  close !== null &&
+  high !== null &&
+  low !== null &&
+  (high - low) > 0
+) {
+  const body  = Math.abs(close - open);
+  const range = high - low;
+  const pct   = Math.round((body / range) * 100);
+
+  let strength = 'WEAK';
+
+  if (pct > 80) {
+    strength = 'STRONG';
+  } else if (pct > 60 && pct <= 80) {
+    strength = 'MODERATE';
+  }
+
+  candleLabel = `${strength} (${pct}%)`;
+}
+
+/* ✅ INSERT END */
+
 const pct   = toNum(row['% change'] ?? row.PercentChange ?? lc['%change'] ?? lc['percentchange']);
 const volume= toNum(row.Volume ?? lc['volume']);
 const volX  = toNum(row['Vol x'] ?? row.VolX ?? lc['volx']);
@@ -999,26 +1030,21 @@ const rsi   = toNum(row.RSI ?? lc['rsi']);
 const macd  = toNum(row.MACD ?? lc['macd']);
 const cci   = toNum(row.CCI ?? lc['cci']);
 const stoch = toNum(row.Stochastic ?? lc['stochastic']);
-const entry = toNum(row.Entry ?? row['Go Long Above'] ?? lc['entry'] ?? lc['golongabove']);
+const entry = toNum(row.Entry ?? row['high'] ?? lc['entry'] ?? lc['high']);
 const sl    = toNum(row['Stop Loss'] ?? row.StopLoss ?? lc['stoploss']);
 let t1      = toNum(row.Target1 ?? lc['target1']);
 let t2      = toNum(row.Target2 ?? lc['target2']);
 let risk    = toNum(row.Risk ?? lc['risk']);
-let rrPct   = toNum(row.RiskRewardPct ?? lc['riskrewardpct']);
 const pnl   = toNum(row.PotentialPL ?? lc['potentialpl']);
 const sector= row.Sector || lc['sector'] || '';
-
 if(entry!=null && sl!=null){
 const R = Math.max(0.01, entry-sl);
 if(risk==null) risk = R;
 if(!t1) t1 = entry + R;
 if(!t2) t2 = entry + 2*R;
-if(rrPct==null && close!=null && close>0){
-rrPct = ((close - sl)/close)*100;
-}
 }
 
-const score = computeAIScore({pct,volX,rsi,macd,rrPct});
+const score = computeAIScore({pct,volX,rsi,macd});
 
 return {
 raw:row,
@@ -1031,12 +1057,12 @@ rsi,
 macd,
 cci,
 stoch,
+candleLabel,
 entry,
 sl,
 t1,
 t2,
 risk,
-rrPct,
 pnl,
 sector,
 score
@@ -1078,10 +1104,6 @@ else if(o.rsi<30) s-=5;
 if(o.macd!=null){
 if(o.macd>0) s+=8;
 else if(o.macd<0) s-=8;
-}
-if(o.rrPct!=null){
-if(o.rrPct>=2) s+=5;
-if(o.rrPct<-3) s-=8;
 }
 return Math.max(0,Math.min(100,Math.round(s)));
 }
@@ -1734,10 +1756,6 @@ pane.innerHTML = `
 <div class="kpi">
 <b>Max Loss (approx units)</b>
 <div class="val">${nf2.format(maxLoss)}</div>
-</div>
-<div class="kpi">
-<b>Risk/Reward%</b>
-<div class="val">${row.rrPct!=null?nf2.format(row.rrPct)+'%':'-'}</div>
 </div>
 <div class="kpi">
 <b>AI Score</b>

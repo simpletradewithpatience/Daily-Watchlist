@@ -1,4 +1,6 @@
 
+
+
 <!DOCTYPE html>
 <html lang="en" data-theme="dark">
 <head>
@@ -801,6 +803,7 @@ Upload Data
 <div id="panelTools">
 <span id="selectedLabel" style="font-size:11px;color:var(--muted);">No stock selected.</span>
 <button id="btnCopyPost" class="btn primary">Copy STWP Post</button>
+<button id="btnDownloadAll" class="btn primary">Download All STWP Posts</button>
 <button id="btnToggleWatch" class="btn ghost">Add to Watchlist</button>
 </div>
 
@@ -1015,11 +1018,11 @@ const pct = Math.round((body / range) * 100);
 candleScore = pct;
 
 if (pct > 80) {
-  candleLabel = `STRONG (${pct}%)`;
+candleLabel = `STRONG (${pct}%)`;
 } else if (pct > 60) {
-  candleLabel = `MODERATE (${pct}%)`;
+candleLabel = `MODERATE (${pct}%)`;
 } else {
-  candleLabel = `WEAK (${pct}%)`;
+candleLabel = `WEAK (${pct}%)`;
 }
 
 }
@@ -1254,9 +1257,9 @@ let existing = currentSort.find(s=>s.key===key);
 if(!isMulti) currentSort = [];
 
 if (!existing) {
-  // Candle strength should sort STRONG → WEAK by default
-  const defaultDir = (key === 'candleScore') ? -1 : 1;
-  currentSort.push({ key, dir: defaultDir });
+// Candle strength should sort STRONG → WEAK by default
+const defaultDir = (key === 'candleScore') ? -1 : 1;
+currentSort.push({ key, dir: defaultDir });
 }else{
 if(existing.dir===1){
 existing.dir=-1;
@@ -1341,7 +1344,7 @@ const v = row[col.key];
 if(v==null || v===''){
 td.textContent='';
 }if (col.key === 'candleScore') {
-  td.textContent = row.candleLabel;
+td.textContent = row.candleLabel;
 }else if(col.numeric){
 td.classList.add('numeric');
 td.textContent = Number.isFinite(v)?nf2.format(v):v;
@@ -1863,6 +1866,31 @@ return;
 }
 const txt = buildStwpPost(selectedRow);
 navigator.clipboard.writeText(txt).then(()=> showToast('STWP post copied'));
+});
+
+// Download ALL STWP posts in one TXT file
+document.getElementById('btnDownloadAll').addEventListener('click', () => {
+if (!allRows.length) {
+showToast('No data to export');
+return;
+}
+
+let fullText = '';
+allRows.forEach(row => {
+fullText += buildStwpPost(row);
+fullText += '\n\n======================================\n\n';
+});
+
+const blob = new Blob([fullText], { type: 'text/plain' });
+const url = URL.createObjectURL(blob);
+
+const a = document.createElement('a');
+a.href = url;
+a.download = 'STWP_All_Posts.txt';
+a.click();
+
+URL.revokeObjectURL(url);
+showToast('Downloaded full STWP dataset');
 });
 
 function buildStwpPost(row){
